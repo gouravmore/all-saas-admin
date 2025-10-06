@@ -5,6 +5,7 @@ import {
 } from "@/components/GeneratedSchemas";
 import SimpleModal from "@/components/SimpleModal";
 import ApprovalRequestModal from "@/components/ApprovalRequestModal";
+import TenantConfirmationModal from "@/components/TenantConfirmationModal";
 import {
   createCohort,
   tenantCreate,
@@ -65,6 +66,9 @@ const AddNewCenters: React.FC<AddLearnerModalProps> = ({
   const [updateBtnDisabled, setUpdateBtnDisabled] = React.useState(true);
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
   const [approvalErrorMessage, setApprovalErrorMessage] = useState("");
+  const [confirmationModalOpen, setConfirmationModalOpen] = useState(false);
+  const [tenantFormData, setTenantFormData] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const roleType = FormContextType.ADMIN_CENTER;
   const {
@@ -84,45 +88,24 @@ const AddNewCenters: React.FC<AddLearnerModalProps> = ({
     event: React.FormEvent<any>
   ) => {
     const formData = data?.formData;
-    try {
-      if (!formData) {
-        showToastMessage("Form data is required", "error");
-        return;
-      }
-      const formatName = (names: any) => {
-        return names?.trim().replace(/\s+/g, " ");
-      };
-      const cohortDetails: CohortDetails = {
-        name: formatName(formData?.name),
-        domain: formData?.domain ? formData?.domain : " ",
-        // status: formData?.status,
-      };
-
-      const cohortData = await tenantCreate(cohortDetails);
-      
-      // Check if response indicates a 403 error requiring approval
-      if (cohortData?.responseCode === 403) {
-        const errorMsg = cohortData?.params?.errmsg || 
-          "You need approval from super admin to perform this action. Please submit an approval request first.";
-        setApprovalErrorMessage(errorMsg);
-        setApprovalModalOpen(true);
-        return;
-      }
-      
-      if (
-        cohortData?.responseCode === 200 ||
-        cohortData?.responseCode === 201
-      ) {
-        showToastMessage(t("TENANT.CREATE_SUCCESSFULLY"), "success");
-        onClose();
-      } else {
-        showToastMessage(t("TENANT.TENANT_ADMIN_FAILED_TO_CREATE"), "error");
-      }
-    } catch (error: any) {
-      const errorMessage =
-        error.message || t("TENANT.TENANT_ADMIN_FAILED_TO_CREATE");
-      showToastMessage(errorMessage, "error");
+    
+    if (!formData) {
+      showToastMessage("Form data is required", "error");
+      return;
     }
+
+    const formatName = (names: any) => {
+      return names?.trim().replace(/\s+/g, " ");
+    };
+
+    const cohortDetails: CohortDetails = {
+      name: formatName(formData?.name),
+      domain: formData?.domain ? formData?.domain : " ",
+    };
+
+    // Store form data and show confirmation modal
+    setTenantFormData(cohortDetails);
+    setConfirmationModalOpen(true);
   };
 
   const handleChange = (data: IChangeEvent<any>) => {
@@ -136,6 +119,50 @@ const AddNewCenters: React.FC<AddLearnerModalProps> = ({
   const handleApprovalModalClose = () => {
     setApprovalModalOpen(false);
     setApprovalErrorMessage("");
+  };
+
+  const handleConfirmationModalClose = () => {
+    setConfirmationModalOpen(false);
+    setTenantFormData(null);
+  };
+
+  const handleConfirmTenantRequest = async () => {
+    if (!tenantFormData) return;
+
+    setIsSubmitting(true);
+    try {
+      // Use the same API that was previously called (tenantCreate)
+      const cohortData = await tenantCreate(tenantFormData);
+      
+      // Check if response indicates a 403 error requiring approval
+      if (cohortData?.responseCode === 403) {
+        const errorMsg = cohortData?.params?.errmsg || 
+          "You need approval from super admin to perform this action. Please submit an approval request first.";
+        setApprovalErrorMessage(errorMsg);
+        setApprovalModalOpen(true);
+        setConfirmationModalOpen(false);
+        setTenantFormData(null);
+        return;
+      }
+      
+      if (
+        cohortData?.responseCode === 200 ||
+        cohortData?.responseCode === 201
+      ) {
+        showToastMessage(t("TENANT.REQUEST_SUBMITTED_SUCCESSFULLY"), "success");
+        setConfirmationModalOpen(false);
+        setTenantFormData(null);
+        onClose();
+      } else {
+        showToastMessage(t("TENANT.TENANT_ADMIN_FAILED_TO_CREATE"), "error");
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error.message || t("TENANT.TENANT_ADMIN_FAILED_TO_CREATE");
+      showToastMessage(errorMessage, "error");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -202,7 +229,28 @@ const AddNewCenters: React.FC<AddLearnerModalProps> = ({
       open={approvalModalOpen}
       onClose={handleApprovalModalClose}
       errorMessage={approvalErrorMessage}
-        />
+    />
+
+    <TenantConfirmationModal
+      open={confirmationModalOpen}
+      onClose={handleConfirmationModalClose}
+      onConfirm={handleConfirmTenantRequest}
+      tenantName={tenantFormData?.name || ""}
+      submittedBy={tenantFormData ? (() => {
+        const adminInfo = localStorage.getItem("adminInfo");
+        if (adminInfo) {
+          try {
+            const admin = JSON.parse(adminInfo);
+            return admin.name || "Unknown User";
+          } catch (error) {
+            return localStorage.getItem("name") || "Unknown User";
+          }
+        }
+        return localStorage.getItem("name") || "Unknown User";
+      })() : ""}
+      submittedOn={new Date().toLocaleString()}
+      isLoading={isSubmitting}
+    />
     </>
   );
 };

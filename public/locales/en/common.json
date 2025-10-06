@@ -31,6 +31,7 @@
     "SUBMIT": "Submit",
     "BACK": "Back",
     "CANCEL": "Cancel",
+    "SENDING": "Sending...",
     "ARE_YOU_SURE_DELETE": "There are {{block}} active blocks in this district you cannot delete it.",
     "NO_ACTIVE_BLOCKS_DELETE": "There are no active blocks in this district. Do you want to delete it?",
     "ARE_YOU_SURE_DELETE_BLOCK": "There are {{centerCount}} active centers in this block you cannot delete it",
@@ -519,7 +520,15 @@
     "ALL_TENANTS": "All Tenants",
     "ADD_NEW_TENANT_ADMIN": "Add New Tenant Admin",
     "TENANT_ADMIN_CREATE": "Tenant Admin Created Successfully",
-    "TENANT_ADMIN_FAILED_TO_CREATE": "Failed to Create Tenant Admin"
+    "TENANT_ADMIN_FAILED_TO_CREATE": "Failed to Create Tenant Admin",
+    "CONFIRM_TENANT_CREATION": "Confirm Tenant Creation",
+    "CONFIRMATION_MESSAGE": "Please review the details below before creating the tenant:",
+    "TENANT_NAME": "Tenant Name",
+    "SUBMITTED_BY": "Submitted By",
+    "SUBMITTED_ON": "Submitted On",
+    "SEND_REQUEST": "Create Tenant",
+    "REQUEST_SUBMITTED_SUCCESSFULLY": "Tenant request sent successfully",
+    "REQUEST_SUBMISSION_FAILED": "Failed to send tenant request"
   },
   "USER": {
     "ADD_NEW_USER": "Add New User",
@@ -596,6 +605,7 @@
   },
   "ADMIN_APPROVALS": {
       "TITLE": "Admin Approval Management",
+      "TENANT_NAME": "Tenant Name",
       "NO_REQUESTS_FOUND": "No Approval Requests Found",
       "NO_REQUESTS_DESCRIPTION": "There are no pending approval requests at the moment.",
       "REQUEST_ID": "Request ID",

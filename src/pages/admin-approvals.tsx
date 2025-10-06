@@ -39,6 +39,8 @@ import { showToastMessage } from "@/components/Toastify";
 import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 
 interface ApprovalRequest {
+  tenantName: string;
+  domain: string;
   approvalId: string;
   userId: string;
   status: "pending" | "approved" | "rejected";
@@ -221,7 +223,8 @@ const AdminApprovalsContent: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>{t("ADMIN_APPROVALS.REQUEST_ID")}</TableCell>
+                  {/* <TableCell>{t("ADMIN_APPROVALS.REQUEST_ID")}</TableCell> */}
+                  <TableCell>{t("ADMIN_APPROVALS.TENANT_NAME")}</TableCell>
                   <TableCell>{t("ADMIN_APPROVALS.USER_NAME")}</TableCell>
                   <TableCell>{t("ADMIN_APPROVALS.USER_EMAIL")}</TableCell>
                   <TableCell>{t("ADMIN_APPROVALS.STATUS")}</TableCell>
@@ -232,10 +235,10 @@ const AdminApprovalsContent: React.FC = () => {
               </TableHead>
               <TableBody>
                 {approvalRequests.map((request) => (
-                  <TableRow key={request.approvalId} hover>
+                  <TableRow key={request.tenantName} hover>
                     <TableCell>
-                      <Typography variant="body2" fontFamily="monospace">
-                        {request.approvalId}
+                      <Typography variant="body2">
+                        {request.tenantName}
                       </Typography>
                     </TableCell>
                     <TableCell>
