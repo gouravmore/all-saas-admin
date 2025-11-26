@@ -165,7 +165,14 @@
     "PASSWORD_LOWERCASE_ERROR": "Password must contain at least one lowercase letter.",
     "PASSWORD_NUMBER_ERROR": "Password must contain at least one number.",
     "PASSWORD_SPECIAL_CHAR_ERROR": "Password must contain at least one special character.",
-    "PASSWORD_COMPLEXITY_REQUIREMENTS": "Password must: \n- Be at least 8 characters long\n- Contain uppercase and lowercase letters\n- Include a number\n- Include a special character"
+    "PASSWORD_COMPLEXITY_REQUIREMENTS": "Password must: \n- Be at least 8 characters long\n- Contain uppercase and lowercase letters\n- Include a number\n- Include a special character",
+    "EXPORT": "Export",
+    "IMPORT": "Import",
+    "NO_DATA_TO_EXPORT": "No data available to export",
+    "EXPORT_SUCCESS": "Data exported successfully",
+    "IMPORT_SUCCESS": "Data imported successfully",
+    "IMPORT_FAILED": "Failed to import data",
+    "INVALID_FILE_TYPE": "Please select a valid CSV file"
   },
   "HINT": {
     "PASSWORD_STRENGTH": {
@@ -496,7 +503,9 @@
     "CREATE_TENANT_ADMIN": "Create Tenant Admin",
     "CREATE_COHORT_ADMIN": "Create Cohort Admin",
     "USERID": "UserId",
-    "TENANT_NAME": "Tenant Name"
+    "TENANT_NAME": "Tenant Name",
+    "TENANT_ID": "Tenant ID",
+    "COHORT_ID": "Cohort ID"
   },
   "WORKSPACE": {
     "EDITOR_WORKSPACE": "Editor Workspace",

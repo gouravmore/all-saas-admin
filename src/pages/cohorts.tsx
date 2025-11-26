@@ -1211,6 +1211,8 @@ const Center: React.FC = () => {
               onDelete={handleDelete}
               handleMemberClick={handleMemberClick}
               handleBulkUpload={handleBulkUpload}
+              showExport={true}
+              exportFileName="cohorts"
             />
           </Box>
         ) : (

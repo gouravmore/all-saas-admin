@@ -46,6 +46,18 @@ const MultipleSelectCheckmarks: React.FC<MultipleSelectCheckmarksProps> = ({
   );
   const isMediumScreen = useMediaQuery("(max-width:900px)");
 
+  // Sort names alphabetically
+  const sortedNames = React.useMemo(() => {
+    const nameCodePairs = names.map((name, index) => ({
+      name,
+      code: codes[index],
+    }));
+    const sorted = nameCodePairs.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+    );
+    return sorted;
+  }, [names, codes]);
+
   const handleChange = (
     event: SelectChangeEvent<typeof selectedCategories>
   ) => {
@@ -55,13 +67,21 @@ const MultipleSelectCheckmarks: React.FC<MultipleSelectCheckmarksProps> = ({
 
     let selectedNames = typeof value === "string" ? value.split(",") : value;
 
-    if (selectedNames.includes("all")) {
-      selectedNames = defaultValue ? [defaultValue] : ["All"];
+    // Check if "all" (the special option value) is selected, not an actual tenant/cohort name
+    // Use a special identifier "__ALL_OPTION__" to distinguish from actual names
+    if (selectedNames.includes("all") && !sortedNames.some(item => item.name.toLowerCase() === "all")) {
+      selectedNames = defaultValue ? [defaultValue] : ["__ALL_OPTION__"];
     }
 
-    const selectedCodes = selectedNames.map(
-      (name) => codes[names.indexOf(name)]
-    );
+    // Map selected names to codes using the sorted/filtered array
+    const selectedCodes = selectedNames.map((name) => {
+      // If it's the special "All" option, return empty array
+      if (name === "__ALL_OPTION__") {
+        return "";
+      }
+      const foundItem = sortedNames.find((item) => item.name === name);
+      return foundItem ? foundItem.code : codes[names.indexOf(name)];
+    });
 
     onCategoryChange(selectedNames, selectedCodes);
   };
@@ -74,8 +94,8 @@ const MultipleSelectCheckmarks: React.FC<MultipleSelectCheckmarksProps> = ({
           labelId="multiple-checkbox-label"
           id="multiple-checkbox"
           value={
-            selectedCategories?.length <= 0 || selectedCategories[0] === ""
-              ? ["All"]
+            selectedCategories?.length <= 0 || selectedCategories[0] === "" || selectedCategories[0] === "__ALL_OPTION__"
+              ? ["all"]
               : selectedCategories
           }
           onChange={handleChange} // Handle the change event for the selection
@@ -86,13 +106,18 @@ const MultipleSelectCheckmarks: React.FC<MultipleSelectCheckmarksProps> = ({
               ? selected
               : [selected];
 
+            // Handle the special "All" option
+            if (selectedArray.includes("all") || selectedArray.includes("__ALL_OPTION__")) {
+              return t("COMMON.ALL");
+            }
+
             // Get the corresponding names for the selected tenant IDs
             const selectedNames = selectedArray
               .map((tenantId) => {
                 const index = codes.indexOf(tenantId); // Find the corresponding name using `codes`
                 return index >= 0 ? names[index] : tenantId; // Map tenantId to name or return tenantId if not found
               })
-              .filter((name) => name !== ""); // Filter out empty values
+              .filter((name) => name !== "" && name !== "__ALL_OPTION__"); // Filter out empty values and special option
 
             // Return single or multiple selected names
             if (selectedNames.length === 1) {
@@ -108,10 +133,10 @@ const MultipleSelectCheckmarks: React.FC<MultipleSelectCheckmarksProps> = ({
             </MenuItem>
           )}
 
-          {/* Render menu items for available names */}
-          {names?.map((name) => (
-            <MenuItem key={name} value={name}>
-              <ListItemText primary={name} />
+          {/* Render menu items for sorted names */}
+          {sortedNames.map((item) => (
+            <MenuItem key={item.name} value={item.name}>
+              <ListItemText primary={item.name} />
             </MenuItem>
           ))}
         </Select>

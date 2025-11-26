@@ -17,8 +17,10 @@ import Profile from "./Profile";
 import { Mail } from "@mui/icons-material";
 import InvitationMenu from "./Invitation";
 import HelpButton from './HelpButton';
+import MenuIcon from "@mui/icons-material/Menu";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 
-const Header = ({ sx, customClass, toggleMobileSidebar, position }: any) => {
+const Header = ({ sx, customClass, toggleMobileSidebar, toggleSidebar, isSidebarOpen, position }: any) => {
   const { t } = useTranslation();
   const theme = createTheme();
   const [lang, setLang] = useState("");
@@ -65,6 +67,7 @@ const Header = ({ sx, customClass, toggleMobileSidebar, position }: any) => {
   return (
     <AppBar sx={sx} position={position} elevation={0} className={customClass}>
       <Toolbar>
+        {/* Mobile menu button */}
         <IconButton
           size="large"
           color="inherit"
@@ -80,6 +83,29 @@ const Header = ({ sx, customClass, toggleMobileSidebar, position }: any) => {
         >
           <FeatherIcon icon="menu" size="20" />
         </IconButton>
+        {/* Desktop sidebar toggle button */}
+        {toggleSidebar && (
+          <IconButton
+            size="large"
+            color="inherit"
+            aria-label="toggle sidebar"
+            onClick={toggleSidebar}
+            sx={{
+              display: {
+                lg: "flex",
+                xs: "none",
+              },
+              color: "white",
+              marginRight: 1,
+            }}
+          >
+            {isSidebarOpen ? (
+              <ChevronLeftIcon />
+            ) : (
+              <MenuIcon />
+            )}
+          </IconButton>
+        )}
         {/* ------------------------------------------- */}
         {/* Search Dropdown */}
         {/* ------------------------------------------- */}
@@ -172,6 +198,7 @@ Header.propTypes = {
   position: PropTypes.string,
   toggleSidebar: PropTypes.func,
   toggleMobileSidebar: PropTypes.func,
+  isSidebarOpen: PropTypes.bool,
 };
 
 export default Header;

@@ -103,6 +103,9 @@ const UserTable: React.FC<UserTableProps> = ({
   );
 
   const [totalCount, setTotalCount] = useState<number>(0);
+  const [dashboardTotalCount, setDashboardTotalCount] = useState<number>(0);
+  const [dashboardActiveCount, setDashboardActiveCount] = useState<number>(0);
+  const [dashboardInactiveCount, setDashboardInactiveCount] = useState<number>(0);
   const [selectedStateCode, setSelectedStateCode] = useState("");
   const [selectedDistrict, setSelectedDistrict] = React.useState<string[]>([]);
   const [selectedDistrictCode, setSelectedDistrictCode] = useState("");
@@ -138,7 +141,7 @@ const UserTable: React.FC<UserTableProps> = ({
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [formData, setFormData] = useState<any>();
 
-  const [loading, setLoading] = useState<boolean | undefined>(undefined);
+  const [loading, setLoading] = useState<boolean>(true);
   const [userId, setUserId] = useState();
   const [submitValue, setSubmitValue] = useState<boolean>(false);
   const [isEditForm, setIsEditForm] = useState<boolean>(false);
@@ -185,6 +188,12 @@ const UserTable: React.FC<UserTableProps> = ({
         "max": 10
       }
     },
+    status: {
+      "ui:widget": "CustomRadioWidget",
+      "ui:options": {
+        defaultValue: "active",
+      },
+    },
   };
 
   const handleOpenAddLearnerModal = () => {
@@ -204,31 +213,56 @@ const UserTable: React.FC<UserTableProps> = ({
     const fetchData = async () => {
       try {
         const result = await getTenantLists(filters);
-        setListOfTenants(result);
+        // Sort tenants alphabetically by name
+        const sortedTenants = result
+          ? [...result].sort((a: any, b: any) =>
+              (a?.name || "").localeCompare(b?.name || "", undefined, {
+                sensitivity: "base",
+              })
+            )
+          : result;
+        setListOfTenants(sortedTenants);
+        
+        // Check if "All" option is selected (using special identifier) or no tenant is selected
+        const selectedTenantOrNot = selectedTenant?.[0] === "__ALL_OPTION__" || !selectedTenant || selectedTenant.length === 0;
         const tenantId = filters?.tenantId
           ? filters?.tenantId
-          : result?.[0]?.tenantId;
+          : selectedTenantOrNot
+          ? undefined
+          : sortedTenants?.[0]?.tenantId;
+        
         let data = {
           limit: 0,
           offset: 0,
           filters: {
-            tenantId: tenantId,
+            // Only include tenantId if a specific tenant is selected (not "All")
+            ...(tenantId && !selectedTenantOrNot ? { tenantId: tenantId } : {}),
             // cohortId: cohortId,
           },
         };
-        if (tenantId) {
-          const cohortList = await getCohortList(data);
-          setListOfCohorts(cohortList?.results);
-        }
+        
+        // Fetch cohorts - if "All" is selected, fetch all cohorts without tenantId filter
+        const cohortList = await getCohortList(data);
+        // Sort cohorts alphabetically by name
+        const sortedCohorts = cohortList?.results
+          ? [...cohortList.results].sort((a: any, b: any) =>
+              (a?.name || "").localeCompare(b?.name || "", undefined, {
+                sensitivity: "base",
+              })
+            )
+          : cohortList?.results;
+        setListOfCohorts(sortedCohorts || []);
       } catch (error) {
         // console.error("Error fetching data:", error);
+        setListOfTenants([]);
+        setListOfCohorts([]);
       }
     };
 
     if (filters) {
       fetchData();
     }
-  }, [filters, selectedCohort]);
+  }, [filters, selectedCohort, selectedTenant]);
 
   const handleFilterChange = async (
     event: React.SyntheticEvent,
@@ -245,6 +279,11 @@ const UserTable: React.FC<UserTableProps> = ({
       setFilters((prevFilters) => ({
         ...prevFilters,
         status: [Status.ARCHIVED],
+      }));
+    } else if (newValue === Status.INACTIVE) {
+      setFilters((prevFilters) => ({
+        ...prevFilters,
+        status: [Status.INACTIVE],
       }));
     } else {
       setFilters((prevFilters) => {
@@ -529,6 +568,7 @@ const UserTable: React.FC<UserTableProps> = ({
       username: rowData.username.replace(/\s/g, "") || "",
       role: rowData.role || "",
       grade: rowData.grade || "",
+      status: rowData.status || "active",
     };
 
     setFormData(initialFormData);
@@ -542,6 +582,90 @@ const UserTable: React.FC<UserTableProps> = ({
       name: keyword,
     }));
   };
+
+  // Fetch dashboard counts (total, active, inactive) - without status filter
+  useEffect(() => {
+    const fetchDashboardCounts = async () => {
+      try {
+        const tenantId = filters?.tenantId && filters?.tenantId;
+        const selectedTenantOrNot = selectedTenant?.[0] === "__ALL_OPTION__" || !selectedTenant || selectedTenant.length === 0;
+        const selectedCohortOrNot = selectedCohort?.[0] === "__ALL_OPTION__" || !filters?.cohortId;
+        
+        // Fetch total count (no status filter)
+        const totalPayload = {
+          limit: 0,
+          filters: {
+            role: filters.role,
+            name: filters?.name,
+          },
+          tenantCohortRoleMapping: {
+            ...(selectedTenantOrNot ? {} : { tenantId: tenantId }),
+            // Only include cohortId if a specific cohort is selected (not "All")
+            ...(selectedCohortOrNot ? {} : { cohortId: filters?.cohortId ? [filters?.cohortId] : [] }),
+          },
+          sort: sortBy,
+          offset: 0,
+        };
+        const totalResp = await userList({ payload: totalPayload, tenantId });
+        const total = totalResp?.total_count || 0;
+        setDashboardTotalCount(total);
+
+        // Fetch active count
+        const activePayload = {
+          limit: 0,
+          filters: {
+            role: filters.role,
+            status: [Status.ACTIVE],
+            name: filters?.name,
+          },
+          tenantCohortRoleMapping: {
+            ...(selectedTenantOrNot ? {} : { tenantId: tenantId }),
+            // Only include cohortId if a specific cohort is selected (not "All")
+            ...(selectedCohortOrNot ? {} : { cohortId: filters?.cohortId ? [filters?.cohortId] : [] }),
+          },
+          sort: sortBy,
+          offset: 0,
+        };
+        const activeResp = await userList({ payload: activePayload, tenantId });
+        const active = activeResp?.total_count || 0;
+        setDashboardActiveCount(active);
+
+        // Fetch inactive count
+        const inactivePayload = {
+          limit: 0,
+          filters: {
+            role: filters.role,
+            status: [Status.INACTIVE],
+            name: filters?.name,
+          },
+          tenantCohortRoleMapping: {
+            ...(selectedTenantOrNot ? {} : { tenantId: tenantId }),
+            // Only include cohortId if a specific cohort is selected (not "All")
+            ...(selectedCohortOrNot ? {} : { cohortId: filters?.cohortId ? [filters?.cohortId] : [] }),
+          },
+          sort: sortBy,
+          offset: 0,
+        };
+        const inactiveResp = await userList({ payload: inactivePayload, tenantId });
+        const inactive = inactiveResp?.total_count || 0;
+        setDashboardInactiveCount(inactive);
+      } catch (error: any) {
+        // Silently handle errors for dashboard counts
+        console.error("Error fetching dashboard counts:", error);
+      }
+    };
+
+    fetchDashboardCounts();
+  }, [
+    filters.role,
+    filters.tenantId,
+    filters.cohortId,
+    filters.name,
+    selectedTenant,
+    editUserState,
+    deleteUserState,
+  ]);
+
   useEffect(() => {
     const fetchUserList = async () => {
       setLoading(true);
@@ -555,7 +679,9 @@ const UserTable: React.FC<UserTableProps> = ({
         }
         const tenantId = filters?.tenantId && filters?.tenantId;
 
-        const selectedTenantOrNot = selectedTenant?.[0] === "All";
+        const selectedTenantOrNot = selectedTenant?.[0] === "__ALL_OPTION__" || !selectedTenant || selectedTenant.length === 0;
+        const selectedCohortOrNot = selectedCohort?.[0] === "__ALL_OPTION__" || !filters?.cohortId;
+        
         const payload = {
           limit,
           filters: {
@@ -565,7 +691,8 @@ const UserTable: React.FC<UserTableProps> = ({
           },
           tenantCohortRoleMapping: {
             ...(selectedTenantOrNot ? {} : { tenantId: tenantId }),
-            cohortId: filters?.cohortId ? [filters?.cohortId] : [],
+            // Only include cohortId if a specific cohort is selected (not "All")
+            ...(selectedCohortOrNot ? {} : { cohortId: filters?.cohortId ? [filters?.cohortId] : [] }),
           },
           sort: sortBy,
           offset,
@@ -691,17 +818,18 @@ const UserTable: React.FC<UserTableProps> = ({
     selectedNames: string[],
     selectedCodes: string[]
   ) => {
-    if (selectedNames && selectedCodes) {
-      const tenantId = selectedCodes.join(",");
+    if (selectedNames && selectedNames.length > 0) {
       setSelectedTenant(selectedNames);
 
       setSelectedCohort([]);
       setFilters((prevFilter) => {
         const newFilters = { ...prevFilter };
 
-        if (selectedNames?.[0] === "All") {
+        // Check for the special "All" option identifier, not an actual tenant named "All"
+        if (selectedNames?.[0] === "__ALL_OPTION__" || (selectedNames?.[0] === "All" && (!selectedCodes || selectedCodes[0] === ""))) {
           delete newFilters.tenantId;
-        } else {
+        } else if (selectedCodes && selectedCodes.length > 0 && selectedCodes[0] !== "") {
+          const tenantId = selectedCodes.join(",");
           newFilters.tenantId = tenantId;
         }
         delete newFilters.cohortId;
@@ -823,7 +951,7 @@ const UserTable: React.FC<UserTableProps> = ({
           mobile: formData?.mobileNo,
           email: formData?.email,
           grade: formData?.grade,
-          // status: "archived",
+          status: formData?.status || "active",
           // customFields: customFields,
         },
       };
@@ -856,15 +984,35 @@ const UserTable: React.FC<UserTableProps> = ({
     selectedNames: string[],
     selectedCodes: string[]
   ) => {
-    if (selectedNames && selectedCodes) {
-      const cohortId = selectedCodes.join(",");
+    if (selectedNames && selectedNames.length > 0) {
       setSelectedCohort(selectedNames);
-      setFilters((prevFilter) => ({
-        ...prevFilter,
-        cohortId: selectedNames?.[0] === "All" ? undefined : cohortId,
-      }));
+      
+      // Check for the special "All" option identifier, not an actual cohort named "All"
+      if (selectedNames?.[0] === "__ALL_OPTION__" || (selectedNames?.[0] === "All" && (!selectedCodes || selectedCodes[0] === ""))) {
+        // If "All" is selected, remove cohortId filter
+        setFilters((prevFilter) => {
+          const newFilters = { ...prevFilter };
+          delete newFilters.cohortId;
+          return newFilters;
+        });
+      } else if (selectedCodes && selectedCodes.length > 0 && selectedCodes[0] !== "") {
+        // Only set cohortId if we have valid codes and it's not "All"
+        const cohortId = selectedCodes.join(",");
+        setFilters((prevFilter) => ({
+          ...prevFilter,
+          cohortId: cohortId,
+        }));
+      } else {
+        // If no valid codes, remove cohortId filter
+        setFilters((prevFilter) => {
+          const newFilters = { ...prevFilter };
+          delete newFilters.cohortId;
+          return newFilters;
+        });
+      }
     } else {
       console.log("No valid cohort selected");
+      setSelectedCohort([]);
       setFilters((prevFilter) => {
         const newFilters = { ...prevFilter };
         delete newFilters.cohortId;
@@ -911,19 +1059,20 @@ const UserTable: React.FC<UserTableProps> = ({
     setSelectedCenterCode: setSelectedCenterCode,
     setSelectedStateCode: setSelectedStateCode,
     statusArchived: false,
+    statusInactive: true,
     isTenantShow: true,
     isCohortShow: true,
     //  statusArchived:true,
   };
 
   return (
-    <HeaderComponent 
+      <HeaderComponent 
       {...userProps}
       showDashboard={true}
         dashboardData={{
-          total: totalCount || 0,
-          active: data?.filter((item: any) => item.status === "active").length || 0,
-          inactive: data?.filter((item: any) => item.status === "inactive").length || 0,
+          total: dashboardTotalCount || 0,
+          active: dashboardActiveCount || 0,
+          inactive: dashboardInactiveCount || 0,
           type: "Learners",
           totalIcon: "🧑‍🎓"
         }}
@@ -970,6 +1119,8 @@ const UserTable: React.FC<UserTableProps> = ({
                 showLearnerReports={true}
                 showResetPassword={true}
                 noDataMessage={data?.length === 0 ? t("COMMON.NO_USER_FOUND") : ""}
+                showExport={true}
+                exportFileName="learners"
               />
             </Box>
           ) : (

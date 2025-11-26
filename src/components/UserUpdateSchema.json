@@ -17,6 +17,13 @@
       "maximum": 10,
       "ui:widget": "number",
       "ui:placeholder": "Enter grade (1-10)"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string",
+      "enum": ["active", "inactive"],
+      "enumNames": ["Active", "Inactive"],
+      "default": "active"
     }
   },
   "dependencies": {}

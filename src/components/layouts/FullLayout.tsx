@@ -128,9 +128,28 @@ const PageWrapper = experimentalStyled("div")(({ theme }) => ({
 }));
 
 const FullLayout = ({ children }: any) => {
-  const [isSidebarOpen, setSidebarOpen] = React.useState(true);
+  // Load sidebar state from localStorage, default to true
+  const [isSidebarOpen, setSidebarOpen] = React.useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("sidebarOpen");
+      return saved !== null ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
   const [isMobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
   const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up("lg"));
+
+  // Save sidebar state to localStorage whenever it changes
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
+    }
+  }, [isSidebarOpen]);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!isSidebarOpen);
+  };
+
   return (
     <MainWrapper>
       <Header
@@ -140,6 +159,8 @@ const FullLayout = ({ children }: any) => {
           boxshow: "0px 4px 4px rgba(0, 0, 0, 0.25)",
         }}
         toggleMobileSidebar={() => setMobileSidebarOpen(true)}
+        toggleSidebar={toggleSidebar}
+        isSidebarOpen={isSidebarOpen}
       />
       <Sidebar
         isSidebarOpen={isSidebarOpen}

@@ -88,6 +88,10 @@ const Tenant: React.FC = () => {
   const [selectedSort, setSelectedSort] = useState("Sort");
   const [selectedFilter, setSelectedFilter] = useState("Active");
   const [cohortData, setCohortData] = useState<cohortFilterDetails[]>([]);
+  const [allTenantData, setAllTenantData] = useState<cohortFilterDetails[]>([]);
+  const [dashboardTotalCount, setDashboardTotalCount] = useState<number>(0);
+  const [dashboardActiveCount, setDashboardActiveCount] = useState<number>(0);
+  const [dashboardInactiveCount, setDashboardInactiveCount] = useState<number>(0);
   const [pageSize, setPageSize] = React.useState<string | number>(10);
   const [confirmationModalOpen, setConfirmationModalOpen] =
     React.useState<boolean>(false);
@@ -310,8 +314,33 @@ const Tenant: React.FC = () => {
           resultData.push(requiredData);
         });
 
-        setCohortData(resultData);
-        const totalCount = resp?.length;
+        // Store all tenant data for filtering
+        setAllTenantData(resultData);
+
+        // Filter based on status and name search
+        let filteredData = resultData;
+        
+        // Filter by status
+        if (filters.status && filters.status.length > 0 && filters.status[0] !== "") {
+          filteredData = filteredData.filter((item: any) => {
+            const itemStatus = item.status?.toLowerCase();
+            return filters.status.some((filterStatus: string) => 
+              filterStatus.toLowerCase() === itemStatus
+            );
+          });
+        }
+        
+        // Filter by name search
+        if (filters.name && filters.name.trim() !== "") {
+          const searchTerm = filters.name.toLowerCase().trim();
+          filteredData = filteredData.filter((item: any) => {
+            const itemName = (item.name || "").toLowerCase();
+            return itemName.includes(searchTerm);
+          });
+        }
+
+        setCohortData(filteredData);
+        const totalCount = filteredData?.length;
 
         setPagination(totalCount >= 10);
         let pageSizeArrayCount: any = [];
@@ -329,6 +358,7 @@ const Tenant: React.FC = () => {
         setPageCount(pageCount);
       } else {
         setCohortData([]);
+        setAllTenantData([]);
         console.warn("API response is not an array:", resp);
       }
 
@@ -336,11 +366,49 @@ const Tenant: React.FC = () => {
       setLoading(false);
     } catch (error) {
       setCohortData([]);
+      setAllTenantData([]);
       setDataFetched(true);
       setLoading(false);
       console.error("Error fetching tenant list:", error);
     }
   };
+
+  // Fetch dashboard counts (total, active, inactive) - without status filter
+  useEffect(() => {
+    const fetchDashboardCounts = async () => {
+      try {
+        let data = {
+          filters: {
+            ...filters,
+            status: "", // No status filter for total count
+          },
+          limit: 0,
+          offset: 0,
+          sort: sortBy,
+        };
+
+        const resp = await getTenantLists(data);
+        if (resp && Array.isArray(resp)) {
+          const total = resp.length;
+          setDashboardTotalCount(total);
+
+          const active = resp.filter(
+            (item: any) => item?.status?.toLowerCase() === Status.ACTIVE
+          ).length;
+          setDashboardActiveCount(active);
+
+          const inactive = resp.filter(
+            (item: any) => item?.status?.toLowerCase() === Status.INACTIVE
+          ).length;
+          setDashboardInactiveCount(inactive);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard counts:", error);
+      }
+    };
+
+    fetchDashboardCounts();
+  }, [openAddNewCohort, sortBy]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -507,20 +575,11 @@ const Tenant: React.FC = () => {
   const handleSearch = (keyword: string) => {
     setPageOffset(Numbers.ZERO);
     setPageCount(Numbers.ONE);
-    fetchTenantList();
-    if (keyword?.length > 3) {
-      if (cohortData?.length > 0) {
-        setFilters((prevFilters) => ({
-          ...prevFilters,
-          name: keyword,
-        }));
-      }
-    } else {
-      setFilters((prevFilters) => ({
-        ...prevFilters,
-        name: keyword,
-      }));
-    }
+    // Update filters with search keyword (search works for any length)
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      name: keyword || undefined,
+    }));
   };
 
   const handleFilterChange = async (
@@ -543,6 +602,11 @@ const Tenant: React.FC = () => {
       setFilters((prevFilters) => ({
         ...prevFilters,
         status: [Status.ARCHIVED],
+      }));
+    } else if (newValue === Status.INACTIVE) {
+      setFilters((prevFilters) => ({
+        ...prevFilters,
+        status: [Status.INACTIVE],
       }));
     } else if (newValue === Status.ALL_LABEL) {
       setFilters((prevFilters) => ({
@@ -1027,8 +1091,9 @@ const Tenant: React.FC = () => {
     handleSearch: handleSearch,
     showAddNew: true,
     // showAddNew: true,
-    showSearch: false,
+    showSearch: true,
     statusArchived: false,
+    statusInactive: true,
     handleAddUserClick: handleAddUserClick,
     statusValue: statusValue,
     setStatusValue: setStatusValue,
@@ -1125,9 +1190,9 @@ const Tenant: React.FC = () => {
         {...userProps}
         showDashboard={true}
         dashboardData={{
-          total: cohortData?.length || 0,
-          active: cohortData?.filter((item: any) => item.status === "active").length || 0,
-          inactive: cohortData?.filter((item: any) => item.status !== "active").length || 0,
+          total: dashboardTotalCount || 0,
+          active: dashboardActiveCount || 0,
+          inactive: dashboardInactiveCount || 0,
           type: "Tenants",
           totalIcon: "🏫"
         }}
@@ -1174,6 +1239,8 @@ const Tenant: React.FC = () => {
                   onAdd={handleAdd}
                   onDelete={handleDelete}
                   handleMemberClick={handleMemberClick}
+                  showExport={true}
+                  exportFileName="tenants"
                 />
               </Box>
             ) : (

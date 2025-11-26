@@ -84,6 +84,7 @@ export const getTenantTableData = (t: any, isMobile: boolean, role: any) => {
 
   const configs: ColumnConfig[] = [
     { key: "name", titleKey: "TABLE_TITLE.NAME", width: 130 },
+    { key: "tenantId", titleKey: "TABLE_TITLE.TENANT_ID", width: 130 },
     // { key: "updatedBy", titleKey: "TABLE_TITLE.UPDATED_BY", width: 130 },
     // { key: "createdBy", titleKey: "TABLE_TITLE.CREATED_BY", width: 130 },
     { key: "createdAt", titleKey: "TABLE_TITLE.CREATED_DATE", width: 130 },
@@ -124,6 +125,7 @@ export const getCohortTableData = (
 ) => {
   const configs: ColumnConfig[] = [
     { key: "name", titleKey: "TABLE_TITLE.NAME", width: 130 },
+    { key: "cohortId", titleKey: "TABLE_TITLE.COHORT_ID", width: 130 },
     { key: "tenantName", titleKey: "TABLE_TITLE.TENANT_NAME", width: 130 },
     // { key: "updatedBy", titleKey: "TABLE_TITLE.UPDATED_BY", width: 130 },
     // { key: "createdBy", titleKey: "TABLE_TITLE.CREATED_BY", width: 130 },

@@ -10,6 +10,7 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
+  Box,
 } from "@mui/material";
 import { format } from "date-fns";
 import { ITableProps, Table } from "ka-table";
@@ -20,6 +21,9 @@ import { useTranslation } from "react-i18next";
 import ActionIcon from "./ActionIcon";
 import UserNameCell from "./UserNameCell";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import { exportToCSV } from "@/utils/exportImport";
+import { showToastMessage } from "./Toastify";
 
 interface KaTableComponentProps {
   columns: ITableProps["columns"];
@@ -55,6 +59,8 @@ interface KaTableComponentProps {
   showResetPassword?: boolean;
   showForghandleForgotPasswordClickotPassword?: void;
   handleBulkUpload?: any;
+  showExport?: boolean;
+  exportFileName?: string;
 }
 
 const KaTableComponent: React.FC<KaTableComponentProps> = ({
@@ -82,6 +88,8 @@ const KaTableComponent: React.FC<KaTableComponentProps> = ({
   showLearnerReports,
   showResetPassword,
   handleBulkUpload,
+  showExport = false,
+  exportFileName = "export",
 }) => {
   const [selectedRowIds, setSelectedRowIds] = useState<number[]>([]);
   const { t } = useTranslation();
@@ -96,6 +104,16 @@ const KaTableComponent: React.FC<KaTableComponentProps> = ({
         ? prevSelected.filter((id) => id !== rowId)
         : [...prevSelected, rowId]
     );
+  };
+
+  const handleExport = () => {
+    if (!data || data.length === 0) {
+      showToastMessage(t("COMMON.NO_DATA_TO_EXPORT"), "warning");
+      return;
+    }
+    const filename = `${exportFileName}_${new Date().toISOString().split('T')[0]}.csv`;
+    exportToCSV(data, filename);
+    showToastMessage(t("COMMON.EXPORT_SUCCESS"), "success");
   };
   const tableProps: ITableProps = {
     columns,
@@ -393,6 +411,35 @@ const KaTableComponent: React.FC<KaTableComponentProps> = ({
           }}
         />
       </div>
+      {showExport && data && data.length > 0 && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            padding: "16px",
+            borderTop: "1px solid #e0e0e0",
+          }}
+        >
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExport}
+            sx={{
+              textTransform: "none",
+              fontSize: "13px",
+              height: "40px",
+              borderColor: theme.palette.primary["100"],
+              color: theme.palette.primary["100"],
+              "&:hover": {
+                borderColor: theme.palette.primary["100"],
+                backgroundColor: theme.palette.primary["50"],
+              },
+            }}
+          >
+            {t("COMMON.EXPORT")}
+          </Button>
+        </Box>
+      )}
     </Paper>
   );
 };
