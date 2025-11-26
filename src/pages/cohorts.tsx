@@ -362,7 +362,6 @@ const Center: React.FC = () => {
 
   //   fetchRoles();
   // }, [Addmodalopen]);
-  // Remove the calculateCohortExpiry function since we'll get expiryDate from API
   // const calculateCohortExpiry = (dateString: string) => {
   //   const originalDate = new Date(dateString);
   //   const newDate = new Date(originalDate);
@@ -408,17 +407,6 @@ const Center: React.FC = () => {
           const matchingTenant = listOfTenants.find(
             (tenant: any) => tenant?.tenantId === item?.tenantId
           );
-          
-          // Format expiryDate for user-readable display in table
-          const formatDateForDisplay = (isoDate: string) => {
-            if (!isoDate) return '';
-            const date = new Date(isoDate);
-            return date.toISOString().split('T')[0]; // Convert to YYYY-MM-DD format
-          };
-
-          // Use expiryDate from API response and format it for display
-          const expiryDate = item?.expiryDate;
-          const formattedExpiryDate = formatDateForDisplay(expiryDate);
 
           return {
             name: item?.name,
@@ -432,8 +420,6 @@ const Center: React.FC = () => {
             updatedAt: item?.updatedAt,
             cohortId: item?.cohortId,
             userRoleTenantMapping: { code: item?.role },
-            cohortExpiresIn: formattedExpiryDate, // Use formatted date for table display
-            expiryDate: expiryDate, // Keep original for edit form
           };
         });
 
@@ -670,25 +656,12 @@ const Center: React.FC = () => {
       };
       const resp = await getCohortList(data);
 
-      // Format the expiryDate from ISO format to YYYY-MM-DD format for the form
-      const formatExpiryDate = (isoDate: string) => {
-        if (!isoDate) return '';
-        const date = new Date(isoDate);
-        return date.toISOString().split('T')[0];
-      };
-
-      // Prepare the row data with properly formatted expiryDate
-      const formattedRowData = {
-        ...rowData,
-        expiryDate: formatExpiryDate(rowData?.expiryDate || rowData?.cohortExpiresIn),
-      };
-
       setFormData({
-        ...formattedRowData,
+        ...rowData,
         status: rowData?.status ? rowData?.status : "active",
       });
       // Use cohortUpdateSchema for edit form instead of schema
-      setEditFormData(mapFields(cohortUpdateSchema, formattedRowData));
+      setEditFormData(mapFields(cohortUpdateSchema, rowData));
       setLoading(false);
       setIsEditForm(true);
     }

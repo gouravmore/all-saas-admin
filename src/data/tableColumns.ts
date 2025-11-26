@@ -131,12 +131,6 @@ export const getCohortTableData = (
     // { key: "createdBy", titleKey: "TABLE_TITLE.CREATED_BY", width: 130 },
     { key: "createdAt", titleKey: "TABLE_TITLE.CREATED_DATE", width: 130 },
     { key: "updatedAt", titleKey: "TABLE_TITLE.UPDATED_DATE", width: 130 },
-    {
-      key: "cohortExpiresIn",
-      titleKey: "TABLE_TITLE.COHORT_EXPIRES_ON",
-      width: 130,
-    },
-
     // {
     //   key: "totalActiveMembers",
     //   titleKey: "TABLE_TITLE.ACTIVE_LEARNERS",
