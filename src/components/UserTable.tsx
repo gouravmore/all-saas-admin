@@ -735,12 +735,38 @@ const UserTable: React.FC<UserTableProps> = ({
             (field: any) => field?.label === "STATES"
           );
 
+          // Find tenant name from listOfTenants
+          const matchingTenant = listOfTenants.find(
+            (tenant: any) => tenant?.tenantId === user?.tenantId
+          );
+          const tenantName = matchingTenant?.name || "-";
+
+          // Find cohort name from listOfCohorts
+          // Check if user has cohortIds (array) or cohortId (single)
+          const userCohortIds = user?.cohortIds || (user?.cohortId ? [user.cohortId] : []);
+          let cohortName = "-";
+          
+          if (userCohortIds && userCohortIds.length > 0) {
+            // Find the first matching cohort
+            const matchingCohort = listOfCohorts.find((cohort: any) =>
+              userCohortIds.includes(cohort?.cohortId)
+            );
+            cohortName = matchingCohort?.name || "-";
+            
+            // If multiple cohorts, show first one with count
+            if (userCohortIds.length > 1 && matchingCohort) {
+              cohortName = `${matchingCohort.name} (+${userCohortIds.length - 1})`;
+            }
+          }
+
           return {
             userId: user.userId,
             username: user.username,
             status: user.status,
             email: user.email ? user.email : "-",
             tenantId: user.tenantId,
+            tenantName: tenantName,
+            cohortName: cohortName,
             name:
               user.name.charAt(0).toUpperCase() +
               user.name.slice(1).toLowerCase(),
@@ -807,6 +833,8 @@ const UserTable: React.FC<UserTableProps> = ({
     filters,
     editUserState,
     deleteUserState,
+    listOfTenants,
+    listOfCohorts,
     // parentState,
     // userType,
     // editUserState,
