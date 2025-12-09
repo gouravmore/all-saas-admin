@@ -61,6 +61,7 @@ interface KaTableComponentProps {
   handleBulkUpload?: any;
   showExport?: boolean;
   exportFileName?: string;
+  hiddenExportColumns?: Array<{ key: string; title: string }>;
 }
 
 const KaTableComponent: React.FC<KaTableComponentProps> = ({
@@ -90,6 +91,7 @@ const KaTableComponent: React.FC<KaTableComponentProps> = ({
   handleBulkUpload,
   showExport = false,
   exportFileName = "export",
+  hiddenExportColumns = [],
 }) => {
   const [selectedRowIds, setSelectedRowIds] = useState<number[]>([]);
   const { t } = useTranslation();
@@ -111,8 +113,25 @@ const KaTableComponent: React.FC<KaTableComponentProps> = ({
       showToastMessage(t("COMMON.NO_DATA_TO_EXPORT"), "warning");
       return;
     }
+    
+    // Get visible columns (exclude actions column)
+    const visibleColumns = columns.filter((col: any) => col.key !== "actions" && col.key !== "selection-cell");
+    let columnKeys = visibleColumns.map((col: any) => col.key);
+    let columnTitles = visibleColumns.map((col: any) => col.title || col.key);
+    
+    // Add hidden export columns (e.g., name column for learners)
+    if (hiddenExportColumns && hiddenExportColumns.length > 0) {
+      hiddenExportColumns.forEach((hiddenCol) => {
+        // Add at the beginning if not already present
+        if (!columnKeys.includes(hiddenCol.key)) {
+          columnKeys.unshift(hiddenCol.key);
+          columnTitles.unshift(hiddenCol.title);
+        }
+      });
+    }
+    
     const filename = `${exportFileName}_${new Date().toISOString().split('T')[0]}.csv`;
-    exportToCSV(data, filename);
+    exportToCSV(data, filename, columnKeys, columnTitles);
     showToastMessage(t("COMMON.EXPORT_SUCCESS"), "success");
   };
   const tableProps: ITableProps = {
@@ -132,7 +151,7 @@ const KaTableComponent: React.FC<KaTableComponentProps> = ({
   };
 
   return (
-    <Paper>
+    <Paper sx={{ overflowX: "auto", width: "100%" }}>
       <div className="ka-table-wrapper">
         <Table
           {...tableProps}
@@ -266,17 +285,27 @@ const KaTableComponent: React.FC<KaTableComponentProps> = ({
                   props.column.key === DataKey?.UPDATED_AT &&
                   props.rowData?.updatedAt
                 ) {
-                  return format(
+                  const dateValue = format(
                     props.rowData?.updatedAt,
                     DateFormat.YYYY_MM_DD
+                  );
+                  return (
+                    <Tooltip title={dateValue} arrow>
+                      <div className="table-cell">{dateValue}</div>
+                    </Tooltip>
                   );
                 } else if (
                   props.column.key === DataKey?.CREATED_AT &&
                   props.rowData?.createdAt
                 ) {
-                  return format(
+                  const dateValue = format(
                     props.rowData?.createdAt,
                     DateFormat.YYYY_MM_DD
+                  );
+                  return (
+                    <Tooltip title={dateValue} arrow>
+                      <div className="table-cell">{dateValue}</div>
+                    </Tooltip>
                   );
                 } else if (props.column.key === DataKey.CREATED_BY) {
                   return <UserNameCell userId={props.rowData?.createdBy} />;
@@ -374,7 +403,28 @@ const KaTableComponent: React.FC<KaTableComponentProps> = ({
                   }
                 }
                 if (props.column.key === DataKey.NAME) {
-                  return firstLetterInUpperCase(props?.rowData?.name);
+                  const nameValue = firstLetterInUpperCase(props?.rowData?.name);
+                  return (
+                    <Tooltip title={nameValue || ""} arrow>
+                      <div className="table-cell">{nameValue}</div>
+                    </Tooltip>
+                  );
+                }
+                if (props.column.key === "tenantName") {
+                  const tenantNameValue = props?.rowData?.tenantName || "-";
+                  return (
+                    <Tooltip title={tenantNameValue} arrow>
+                      <div className="table-cell">{tenantNameValue}</div>
+                    </Tooltip>
+                  );
+                }
+                if (props.column.key === "cohortName") {
+                  const cohortNameValue = props?.rowData?.cohortName || "-";
+                  return (
+                    <Tooltip title={cohortNameValue} arrow>
+                      <div className="table-cell">{cohortNameValue}</div>
+                    </Tooltip>
+                  );
                 }
                 if (props.column.key === "selection-cell") {
                   return (
@@ -385,7 +435,12 @@ const KaTableComponent: React.FC<KaTableComponentProps> = ({
                   );
                 }
 
-                return <div className="table-cell">{props?.value}</div>;
+                const cellValue = props?.value || "";
+                return (
+                  <Tooltip title={cellValue} arrow>
+                    <div className="table-cell">{cellValue}</div>
+                  </Tooltip>
+                );
               },
             },
             dataRow: {

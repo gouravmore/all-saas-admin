@@ -66,14 +66,68 @@ table tbody tr:hover td {
   line-height: 24px !important;
   text-align: center !important;
   border-bottom: 1px solid #e0e0e0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 100% !important;
+}
+
+/* Table cell content wrapper */
+.table-cell {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 100% !important;
+  display: block !important;
 }
 
 /* Table container */
 .ka-table-wrapper, .MuiTableContainer-root {
   background: white;
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+/* Ensure table maintains minimum width for all columns */
+.ka-table-wrapper table,
+.ka-table-wrapper .ka-table {
+  min-width: 100%;
+  width: max-content;
+}
+
+/* Smooth scrolling */
+.ka-table-wrapper {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.ka-table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.ka-table-wrapper::-webkit-scrollbar-track {
+  background: #f7fafc;
+  border-radius: 4px;
+}
+
+.ka-table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+.ka-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Ensure ka-table cells respect overflow */
+.ka-cell-content {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 100% !important;
 }
 
 /* Status chips */

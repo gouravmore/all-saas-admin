@@ -505,7 +505,8 @@
     "USERID": "UserId",
     "TENANT_NAME": "Tenant Name",
     "TENANT_ID": "Tenant ID",
-    "COHORT_ID": "Cohort ID"
+    "COHORT_ID": "Cohort ID",
+    "COHORT_NAME": "Cohort Name"
   },
   "WORKSPACE": {
     "EDITOR_WORKSPACE": "Editor Workspace",
