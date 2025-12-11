@@ -62,6 +62,7 @@ interface TenantData {
   tenantId: string;
   type: string;
   userRoleTenantMapping: string;
+  tenantAdminEmail?: string;
 }
 interface RowData {
   cohortId: string;
@@ -309,6 +310,7 @@ const Tenant: React.FC = () => {
             domain: item.domain || "-",
             tenantId: item.tenantId || "-",
             userRoleTenantMapping: item.userRoleTenantMapping || "-",
+            tenantAdminEmail: item.tenantAdminEmail || "-",
           };
 
           resultData.push(requiredData);
@@ -1241,6 +1243,9 @@ const Tenant: React.FC = () => {
                   handleMemberClick={handleMemberClick}
                   showExport={true}
                   exportFileName="tenants"
+                  hiddenExportColumns={[
+                    { key: "tenantAdminEmail", title: t("TABLE_TITLE.TENANT_ADMIN_EMAIL") }
+                  ]}
                 />
               </Box>
             ) : (

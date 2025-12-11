@@ -420,6 +420,10 @@ const Center: React.FC = () => {
             updatedAt: item?.updatedAt,
             cohortId: item?.cohortId,
             userRoleTenantMapping: { code: item?.role },
+            tenantAdminEmail: item?.tenantAdminEmail || "-",
+            cohortAdminEmail: item?.cohortAdminEmail || "-",
+            createdByEmail: item?.createdByEmail || "-",
+            updatedByEmail: item?.updatedByEmail || "-",
           };
         });
 
@@ -1186,6 +1190,12 @@ const Center: React.FC = () => {
               handleBulkUpload={handleBulkUpload}
               showExport={true}
               exportFileName="cohorts"
+              hiddenExportColumns={[
+                { key: "tenantAdminEmail", title: t("TABLE_TITLE.TENANT_ADMIN_EMAIL") },
+                { key: "cohortAdminEmail", title: t("TABLE_TITLE.COHORT_ADMIN_EMAIL") },
+                { key: "createdByEmail", title: t("TABLE_TITLE.CREATED_BY_EMAIL") },
+                { key: "updatedByEmail", title: t("TABLE_TITLE.UPDATED_BY_EMAIL") }
+              ]}
             />
           </Box>
         ) : (
