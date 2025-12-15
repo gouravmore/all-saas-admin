@@ -1189,7 +1189,11 @@ const Center: React.FC = () => {
               handleMemberClick={handleMemberClick}
               handleBulkUpload={handleBulkUpload}
               showExport={true}
-              exportFileName="cohorts"
+              exportFileName={
+                filters?.status?.[0] && filters.status[0] !== "" && filters.status[0] !== Status.ALL_LABEL
+                  ? `cohorts_${filters.status[0].toLowerCase()}`
+                  : "cohorts"
+              }
               hiddenExportColumns={[
                 { key: "tenantAdminEmail", title: t("TABLE_TITLE.TENANT_ADMIN_EMAIL") },
                 { key: "cohortAdminEmail", title: t("TABLE_TITLE.COHORT_ADMIN_EMAIL") },

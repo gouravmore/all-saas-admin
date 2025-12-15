@@ -78,11 +78,17 @@ export const getTLTableColumns = (t: any, isMobile: boolean, filter: any) => {
   return generateColumns(t, configs, isMobile);
 };
 
-export const getTenantTableData = (t: any, isMobile: boolean, role: any) => {
+export const getTenantTableData = (t: any, isMobile: boolean, role: any, filter?: any) => {
   console.log({ role });
   const adminInfo = JSON.parse(localStorage.getItem("adminInfo") ?? "{}");
   // const localRoleCheck = adminInfo?.tenantData?.[0]?.roleName === "cohort admin";
   // const isCohortAdmin = adminInfo?.tenantData?.[0]?.roleName === "cohort admin" ? true : false;
+
+  // Hide status column if filtering by a specific status (not "All")
+  const showStatusColumn = !filter?.status || 
+    filter.status === "" || 
+    (Array.isArray(filter.status) && filter.status.length === 0) ||
+    (Array.isArray(filter.status) && filter.status[0] === "");
 
   const configs: ColumnConfig[] = [
     { key: "name", titleKey: "TABLE_TITLE.NAME", width: 130 },
@@ -102,7 +108,7 @@ export const getTenantTableData = (t: any, isMobile: boolean, role: any) => {
     //   titleKey: "TABLE_TITLE.ARCHIVED_LEARNERS",
     //   width: 130,
     // },
-    { key: "status", titleKey: "TABLE_TITLE.STATUS", width: 90 },
+    ...(showStatusColumn ? [{ key: "status", titleKey: "TABLE_TITLE.STATUS", width: 90 }] : []),
 
     ...(role == true
       ? [

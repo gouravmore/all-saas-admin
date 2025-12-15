@@ -114,16 +114,28 @@ const KaTableComponent: React.FC<KaTableComponentProps> = ({
       return;
     }
     
-    // Get visible columns (exclude actions column)
-    const visibleColumns = columns.filter((col: any) => col.key !== "actions" && col.key !== "selection-cell");
+    // Get visible column keys
+    const visibleColumnKeys = columns.map((col: any) => col.key);
+    
+    // Get hidden export column keys
+    const hiddenExportKeys = hiddenExportColumns?.map((col) => col.key) || [];
+    
+    // Get visible columns (exclude actions, selection-cell)
+    // Also exclude visible columns that are in hiddenExportColumns (like roleDefine)
+    const visibleColumns = columns.filter((col: any) => 
+      col.key !== "actions" && 
+      col.key !== "selection-cell" && 
+      !hiddenExportKeys.includes(col.key)
+    );
     let columnKeys = visibleColumns.map((col: any) => col.key);
     let columnTitles = visibleColumns.map((col: any) => col.title || col.key);
     
-    // Add hidden export columns (e.g., name column for learners)
+    // Add hidden export columns that are NOT visible (e.g., tenantAdminEmail)
+    // These should be included in the export even though they're not visible in the table
     if (hiddenExportColumns && hiddenExportColumns.length > 0) {
       hiddenExportColumns.forEach((hiddenCol) => {
-        // Add at the beginning if not already present
-        if (!columnKeys.includes(hiddenCol.key)) {
+        // Add if it's not visible (not in visibleColumnKeys) and not already in columnKeys
+        if (!visibleColumnKeys.includes(hiddenCol.key) && !columnKeys.includes(hiddenCol.key)) {
           columnKeys.unshift(hiddenCol.key);
           columnTitles.unshift(hiddenCol.title);
         }

@@ -1148,7 +1148,11 @@ const UserTable: React.FC<UserTableProps> = ({
                 showResetPassword={true}
                 noDataMessage={data?.length === 0 ? t("COMMON.NO_USER_FOUND") : ""}
                 showExport={true}
-                exportFileName="learners"
+                exportFileName={
+                  filters?.status?.[0] && filters.status[0] !== ""
+                    ? `learners_${filters.status[0].toLowerCase()}`
+                    : "learners"
+                }
               />
             </Box>
           ) : (

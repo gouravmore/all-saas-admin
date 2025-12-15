@@ -1221,7 +1221,7 @@ const Tenant: React.FC = () => {
                 }}
               >
                 <KaTableComponent
-                  columns={getTenantTableData(t, isMobile, adminRole)}
+                  columns={getTenantTableData(t, isMobile, adminRole, filters)}
                   addAction={true}
                   addBtnFunc={handleCreateTenantAdmin}
                   data={cohortData}
@@ -1242,9 +1242,14 @@ const Tenant: React.FC = () => {
                   onDelete={handleDelete}
                   handleMemberClick={handleMemberClick}
                   showExport={true}
-                  exportFileName="tenants"
+                  exportFileName={
+                    filters?.status?.[0] && filters.status[0] !== "" && filters.status[0] !== Status.ALL_LABEL
+                      ? `tenants_${filters.status[0].toLowerCase()}`
+                      : "tenants"
+                  }
                   hiddenExportColumns={[
-                    { key: "tenantAdminEmail", title: t("TABLE_TITLE.TENANT_ADMIN_EMAIL") }
+                    { key: "tenantAdminEmail", title: t("TABLE_TITLE.TENANT_ADMIN_EMAIL") },
+                    { key: "roleDefine", title: t("TABLE_TITLE.CREATE_TENANT_ADMIN") }
                   ]}
                 />
               </Box>
