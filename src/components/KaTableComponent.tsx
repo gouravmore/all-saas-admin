@@ -484,7 +484,7 @@ const KaTableComponent: React.FC<KaTableComponentProps> = ({
           }}
         />
       </div>
-      {showExport && (data?.length > 0 || onExportFetch) && (
+      {showExport && ((data && data.length > 0) || onExportFetch) && (
         <Box
           sx={{
             display: "flex",
