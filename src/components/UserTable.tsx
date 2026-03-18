@@ -8,7 +8,7 @@ import Pagination from "@mui/material/Pagination";
 import { SelectChangeEvent } from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "next-i18next";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import KaTableComponent from "./KaTableComponent";
 import Loader from "./Loader";
 import { userList } from "../services/UserList";
@@ -671,7 +671,7 @@ const UserTable: React.FC<UserTableProps> = ({
       setLoading(true);
       try {
         // const fields = ["age", "districts", "states", "blocks", "gender"];
-        let limit = 0;
+        const limit = 200; // pagination limit; use onExportFetch with limit 0 for full export
         let offset = pageOffset * pageSize;
 
         if (filters.name) {
@@ -841,6 +841,82 @@ const UserTable: React.FC<UserTableProps> = ({
     // selectedTenant,
     // selectedCohort,
   ]);
+
+  const mapUserToRow = useCallback(
+    (user: any) => {
+      const ageField = user?.customFields?.find((f: any) => f?.label === "AGE");
+      const genderField = user?.customFields?.find((f: any) => f?.label === "GENDER");
+      const blockField = user?.customFields?.find((f: any) => f?.label === "BLOCKS");
+      const districtField = user?.customFields?.find((f: any) => f?.label === "DISTRICTS");
+      const stateField = user?.customFields?.find((f: any) => f?.label === "STATES");
+      const matchingTenant = listOfTenants.find((t: any) => t?.tenantId === user?.tenantId);
+      const tenantName = matchingTenant?.name || "-";
+      const userCohortIds = user?.cohortIds || (user?.cohortId ? [user.cohortId] : []);
+      let cohortName = "-";
+      if (userCohortIds?.length > 0) {
+        const matchingCohort = listOfCohorts.find((c: any) => userCohortIds.includes(c?.cohortId));
+        cohortName = matchingCohort?.name || "-";
+        if (userCohortIds.length > 1 && matchingCohort) {
+          cohortName = `${matchingCohort.name} (+${userCohortIds.length - 1})`;
+        }
+      }
+      return {
+        userId: user.userId,
+        username: user.username,
+        status: user.status,
+        email: user.email ? user.email : "-",
+        tenantId: user.tenantId,
+        tenantName,
+        cohortName,
+        name: user.name?.charAt(0).toUpperCase() + user.name?.slice(1).toLowerCase(),
+        role: user.role ? user.role : "Public",
+        mobile: user.mobile ? user.mobile : "-",
+        grade: user.grade ? user.grade : "-",
+        age: ageField ? ageField?.value : " - ",
+        district: districtField
+          ? districtField?.value + " , " + firstLetterInUpperCase(blockField?.value)
+          : "-",
+        state: stateField ? stateField?.value : "-",
+        blocks: blockField ? firstLetterInUpperCase(blockField?.value) : "-",
+        gender: genderField
+          ? genderField.value?.charAt(0)?.toUpperCase() + genderField.value?.slice(1).toLowerCase()
+          : "-",
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        createdBy: user.createdBy,
+        updatedBy: user.updatedBy,
+        stateCode: stateField?.code,
+        districtCode: districtField?.code,
+        blockCode: blockField?.code,
+        districtValue: districtField ? districtField?.value : "-",
+      };
+    },
+    [listOfTenants, listOfCohorts]
+  );
+
+  const onExportFetch = useCallback(async () => {
+    const tenantId = filters?.tenantId && filters?.tenantId;
+    const selectedTenantOrNot =
+      selectedTenant?.[0] === "__ALL_OPTION__" || !selectedTenant || selectedTenant.length === 0;
+    const selectedCohortOrNot = selectedCohort?.[0] === "__ALL_OPTION__" || !filters?.cohortId;
+    const payload = {
+      limit: 0,
+      offset: 0,
+      filters: {
+        role: filters.role,
+        status: filters.status,
+        name: filters?.name,
+      },
+      tenantCohortRoleMapping: {
+        ...(selectedTenantOrNot ? {} : { tenantId }),
+        ...(selectedCohortOrNot ? {} : { cohortId: filters?.cohortId ? [filters?.cohortId] : [] }),
+      },
+      sort: sortBy,
+    };
+    const resp = await userList({ payload, tenantId });
+    const details = resp?.getUserDetails || [];
+    return details.map(mapUserToRow);
+  }, [filters, selectedTenant, selectedCohort, sortBy, mapUserToRow]);
 
   const handleTenantChange = (
     selectedNames: string[],
@@ -1153,6 +1229,7 @@ const UserTable: React.FC<UserTableProps> = ({
                     ? `learners_${filters.status[0].toLowerCase()}`
                     : "learners"
                 }
+                onExportFetch={onExportFetch}
               />
             </Box>
           ) : (

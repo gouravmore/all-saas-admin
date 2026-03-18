@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import KaTableComponent from "../components/KaTableComponent";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import HeaderComponent from "@/components/HeaderComponent";
@@ -373,13 +373,12 @@ const Center: React.FC = () => {
     setLoading(true);
     try {
       setCohortData([]);
-      const limit = 0;
-      // const offset = pageOffset * limit;
+      const limit = 200; // pagination limit; use onExportFetch with limit 0 for full export
       const offset = pageOffset * pageSize;
       const sort = sortBy;
 
       const data = {
-        limit: limit,
+        limit,
         offset: offset,
         sort: sort,
         filters: filters,
@@ -474,6 +473,39 @@ const Center: React.FC = () => {
     createCenterStatus,
     listOfTenants,
   ]);
+
+  const onExportFetch = useCallback(async () => {
+    const data = {
+      limit: 0,
+      offset: 0,
+      sort: sortBy,
+      filters,
+    };
+    const resp = await getCohortList(data);
+    const result = resp?.results || [];
+    return result.map((item: any) => {
+      const matchingTenant = listOfTenants.find(
+        (tenant: any) => tenant?.tenantId === item?.tenantId
+      );
+      return {
+        name: item?.name,
+        type: item?.type === "cohort" ? "Cohort" : item?.type,
+        status: item?.status,
+        tenantId: item?.tenantId,
+        tenantName: matchingTenant?.name || "Unknown Tenant",
+        updatedBy: item?.updatedBy,
+        createdBy: item?.createdBy,
+        createdAt: item?.createdAt,
+        updatedAt: item?.updatedAt,
+        cohortId: item?.cohortId,
+        userRoleTenantMapping: { code: item?.role },
+        tenantAdminEmail: item?.tenantAdminEmail || "-",
+        cohortAdminEmail: item?.cohortAdminEmail || "-",
+        createdByEmail: item?.createdByEmail || "-",
+        updatedByEmail: item?.updatedByEmail || "-",
+      };
+    });
+  }, [sortBy, filters, listOfTenants]);
 
   // handle functions
   const handleChange = (event: SelectChangeEvent<number>) => {
@@ -1200,6 +1232,7 @@ const Center: React.FC = () => {
                 { key: "createdByEmail", title: t("TABLE_TITLE.CREATED_BY_EMAIL") },
                 { key: "updatedByEmail", title: t("TABLE_TITLE.UPDATED_BY_EMAIL") }
               ]}
+              onExportFetch={onExportFetch}
             />
           </Box>
         ) : (

@@ -62,6 +62,8 @@ interface KaTableComponentProps {
   showExport?: boolean;
   exportFileName?: string;
   hiddenExportColumns?: Array<{ key: string; title: string }>;
+  /** When provided, export uses this to fetch full data (e.g. limit=0) instead of current page data */
+  onExportFetch?: () => Promise<any[]>;
 }
 
 const KaTableComponent: React.FC<KaTableComponentProps> = ({
@@ -92,6 +94,7 @@ const KaTableComponent: React.FC<KaTableComponentProps> = ({
   showExport = false,
   exportFileName = "export",
   hiddenExportColumns = [],
+  onExportFetch,
 }) => {
   const [selectedRowIds, setSelectedRowIds] = useState<number[]>([]);
   const { t } = useTranslation();
@@ -108,42 +111,45 @@ const KaTableComponent: React.FC<KaTableComponentProps> = ({
     );
   };
 
-  const handleExport = () => {
-    if (!data || data.length === 0) {
+  const handleExport = async () => {
+    const exportData = onExportFetch ? await onExportFetch() : data;
+    if (!exportData || exportData.length === 0) {
       showToastMessage(t("COMMON.NO_DATA_TO_EXPORT"), "warning");
       return;
     }
-    
+
     // Get visible column keys
     const visibleColumnKeys = columns.map((col: any) => col.key);
-    
+
     // Get hidden export column keys
     const hiddenExportKeys = hiddenExportColumns?.map((col) => col.key) || [];
-    
+
     // Get visible columns (exclude actions, selection-cell)
     // Also exclude visible columns that are in hiddenExportColumns (like roleDefine)
-    const visibleColumns = columns.filter((col: any) => 
-      col.key !== "actions" && 
-      col.key !== "selection-cell" && 
-      !hiddenExportKeys.includes(col.key)
+    const visibleColumns = columns.filter(
+      (col: any) =>
+        col.key !== "actions" &&
+        col.key !== "selection-cell" &&
+        !hiddenExportKeys.includes(col.key)
     );
     let columnKeys = visibleColumns.map((col: any) => col.key);
     let columnTitles = visibleColumns.map((col: any) => col.title || col.key);
-    
+
     // Add hidden export columns that are NOT visible (e.g., tenantAdminEmail)
-    // These should be included in the export even though they're not visible in the table
     if (hiddenExportColumns && hiddenExportColumns.length > 0) {
       hiddenExportColumns.forEach((hiddenCol) => {
-        // Add if it's not visible (not in visibleColumnKeys) and not already in columnKeys
-        if (!visibleColumnKeys.includes(hiddenCol.key) && !columnKeys.includes(hiddenCol.key)) {
+        if (
+          !visibleColumnKeys.includes(hiddenCol.key) &&
+          !columnKeys.includes(hiddenCol.key)
+        ) {
           columnKeys.unshift(hiddenCol.key);
           columnTitles.unshift(hiddenCol.title);
         }
       });
     }
-    
-    const filename = `${exportFileName}_${new Date().toISOString().split('T')[0]}.csv`;
-    exportToCSV(data, filename, columnKeys, columnTitles);
+
+    const filename = `${exportFileName}_${new Date().toISOString().split("T")[0]}.csv`;
+    exportToCSV(exportData, filename, columnKeys, columnTitles);
     showToastMessage(t("COMMON.EXPORT_SUCCESS"), "success");
   };
   const tableProps: ITableProps = {
@@ -478,7 +484,7 @@ const KaTableComponent: React.FC<KaTableComponentProps> = ({
           }}
         />
       </div>
-      {showExport && data && data.length > 0 && (
+      {showExport && (data?.length > 0 || onExportFetch) && (
         <Box
           sx={{
             display: "flex",
