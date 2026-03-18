@@ -1143,8 +1143,8 @@ const UserTable: React.FC<UserTableProps> = ({
                 onDelete={handleDelete}
                 pagination={pagination}
                 allowEditIcon={true}
-                showReports={true}
-                showLearnerReports={true}
+                showReports={false}
+                showLearnerReports={false}
                 showResetPassword={true}
                 noDataMessage={data?.length === 0 ? t("COMMON.NO_USER_FOUND") : ""}
                 showExport={true}

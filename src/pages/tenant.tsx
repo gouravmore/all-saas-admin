@@ -1236,7 +1236,7 @@ const Tenant: React.FC = () => {
                   extraActions={extraActions}
                   showIcons={true}
                   allowEditIcon={true}
-                  showReports={true}
+                  showReports={false}
                   onEdit={handleEdit}
                   onAdd={handleAdd}
                   onDelete={handleDelete}
