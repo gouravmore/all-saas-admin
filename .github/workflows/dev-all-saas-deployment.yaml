@@ -2,7 +2,7 @@ name: Deployment on the All-admin Dev
 on:
   push:
     branches:
-      - all-saas-0.4
+      - all-saas-0.5
       
 jobs:
   ALL-SAAS-ADMIN:
